@@ -16,8 +16,8 @@ public enum Tetromino
 public struct TetrominoData
 {
     public Tetromino tetromino;
-    public Tile tile;           //????
-    public Vector2Int[] cells { get; private set; } //will form our shapes w/ coordinates & is private 
+    public Tile tile;
+    public Vector2Int[] cells { get; private set; } //will form our shapes w/ coordinates (storing our array of cells)
 
     public void Initialize()
     {
