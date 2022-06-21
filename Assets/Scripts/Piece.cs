@@ -61,7 +61,7 @@ public class Piece : MonoBehaviour
             continue;
     }
 
-    public bool Move(Vector2Int translation)
+    private bool Move(Vector2Int translation)
     {
         //the current new position of our piece
         Vector3Int newPosition = this.position; 
@@ -81,8 +81,24 @@ public class Piece : MonoBehaviour
     //updates rotation index using rotation matrix on all our cells
     private void Rotate(int direct)
     {
+        //storing our current rotation index
+        int originalRotation = this.rotationIndex;
+        
+        //updating our rotation index
         this.rotationIndex = Wrap(this.rotationIndex + direct, 0, 4);
 
+        ApplyRotationMatrix(direct);
+
+        //if wall kick fails, we need to revert everything we did
+        if(!TestWallKicks(rotationIndex, direct))
+        {
+            this.rotationIndex = originalRotation;
+            ApplyRotationMatrix(-direct);
+        }
+    }
+
+    private void ApplyRotationMatrix(int direct)
+    {
         for(int i = 0; i < this.cells.Length; i++)
         {
             //not int bc we offset the I & O cells by half a unit
@@ -120,10 +136,17 @@ public class Piece : MonoBehaviour
         //check which index we are dealing with (eg. 0>>1 or 1>>2 ...)
         int wallKickIndex = GetWallKickIndex(rotationIndex, rotationDirection);
 
-        for(int i = 0; i < this.data.wallkicks.GetLength(1); i++)
+        //five data set tests (dimension 1)
+        for(int i = 0; i < this.data.wallkicks.GetLength(dimension: 1); i++)
         {
-            //
+            Vector2Int translation = this.data.wallkicks[wallKickIndex, i];
+
+            //exit if once we are in a valid position
+            if(Move(translation))
+                return true;
         }
+
+        return false;
     }
 
     //returns which index we are dealing with when validating wallkicks 
