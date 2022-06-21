@@ -10,12 +10,21 @@ public class Piece : MonoBehaviour
     public Vector3Int position { get; private set; }
     public int rotationIndex { get; private set; } //will contain the index of rotation we are currently on
 
+    public float stepDelay = 1f; //timer delay for our step
+    public float lockDelay = 0.5f; //lock delay
+
+    private float stepTime;
+    private float lockTime;
+
     public void Initialize(Board board, Vector3Int position, TetrominoData data) //using one piece that will be reinitalized each time with new data
     {
         this.board = board;
         this.position = position;
         this.data = data;
         this.rotationIndex = 0;
+        this.stepTime = Time.time + this.stepDelay; //one second later than what our current system time is
+        this.lockTime = 0f; //once our piece has reached out lockDelay, it will lock into place
+
 
         if(this.cells == null) //if the array isn't already initalized 
         {
@@ -31,6 +40,8 @@ public class Piece : MonoBehaviour
     private void Update()
     {
         this.board.Clear(this);
+
+        this.lockTime += Time.deltaTime; //updates lockTime based on the amount of time that has passed since last frame was rendered
 
         if(Input.GetKeyDown(KeyCode.Q))
             Rotate(-1); //shift down an index to next rotation
@@ -48,17 +59,38 @@ public class Piece : MonoBehaviour
 
         //hard drop
         if(Input.GetKeyDown(KeyCode.Space))
-        {
             HardDrop();
-        }
+
+        if(Time.time >= this.stepTime)
+            Step();
 
         this.board.Set(this);
+    }
+
+    //
+    private void Step()
+    {
+        this.stepTime = Time.time + this.stepDelay;
+
+        Move(Vector2Int.down);
+
+        //check for a lock
+        if(this.lockTime >= this.lockDelay)
+            Lock();
     }
 
     public void HardDrop()
     {
         while(Move(Vector2Int.down))
             continue;
+
+        Lock();
+    }
+
+    private void Lock()
+    {
+        this.board.Set(this);
+        this.board.SpawnPiece();
     }
 
     private bool Move(Vector2Int translation)
@@ -73,7 +105,10 @@ public class Piece : MonoBehaviour
 
         //updates the new position if valid
         if(valid)
+        {
             this.position = newPosition;
+            this.lockTime = 0f; //resets
+        }
 
         return valid;
     }
@@ -87,7 +122,7 @@ public class Piece : MonoBehaviour
         //updating our rotation index
         this.rotationIndex = Wrap(this.rotationIndex + direct, 0, 4);
 
-        ApplyRotationMatrix(direct);
+        ApplyRotationMatrix(direct); 
 
         //if wall kick fails, we need to revert everything we did
         if(!TestWallKicks(rotationIndex, direct))
