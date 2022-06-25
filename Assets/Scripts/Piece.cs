@@ -1,4 +1,4 @@
-//this class will contain the logic for our tetromino piece
+//this file will contain the logic for our tetromino piece
 
 using UnityEngine;
 
@@ -67,7 +67,7 @@ public class Piece : MonoBehaviour
         this.board.Set(this);
     }
 
-    //
+
     private void Step()
     {
         this.stepTime = Time.time + this.stepDelay;
@@ -90,6 +90,7 @@ public class Piece : MonoBehaviour
     private void Lock()
     {
         this.board.Set(this);
+        this.board.ClearLines();
         this.board.SpawnPiece();
     }
 

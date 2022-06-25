@@ -45,7 +45,19 @@ public class Board : MonoBehaviour
         TetrominoData data = this.tetrominos[random];
 
         this.activePiece.Initialize(this, this.spawnPosition, data); //initalize the random piece picked
-        Set(this.activePiece);
+
+        if(IsValidPosition(this.activePiece, this.spawnPosition))
+        {
+            Set(this.activePiece);
+        } else
+        {
+            GameOver();
+        }
+    }
+
+    private void GameOver()
+    {
+        this.tilemap.ClearAllTiles();
     }
 
     public void Set(Piece piece) //read the new copy of cells (in Piece) into our tilemap
@@ -86,5 +98,64 @@ public class Board : MonoBehaviour
         }
 
         return true;
+    }
+
+    //clearing lines
+    public void ClearLines()
+    {
+        RectInt bounds = this.Bounds;
+        int row = bounds.yMin;
+
+        while(row < bounds.yMax)
+        {
+            if(IsLineFull(row))
+            {
+                LineClear(row);
+            } else
+            {
+                row++;
+            }
+        }
+    }
+
+    private bool IsLineFull(int row)
+    {
+        RectInt bounds = this.Bounds;
+        
+        for(int column = bounds.xMin; column < bounds.xMax; column++)
+        {
+            Vector3Int position = new Vector3Int(column, row, 0); //position of column (vect3 bc that's what tilemaps use)
+
+            if(!this.tilemap.HasTile(position)) //if there is no tile at any position, not full, tf break
+                return false;
+        }
+
+        return true;
+    }
+
+    private void LineClear(int row)
+    {
+        RectInt bounds = this.Bounds;
+
+        for(int col = bounds.xMin; col < bounds.xMax; col++)
+        {
+            Vector3Int position = new Vector3Int(col, row, 0); //current position
+            this.tilemap.SetTile(position, null);
+        }
+
+        // have every tile above fall down once cleared
+        while(row < bounds.yMax)
+        {
+            for(int col = bounds.xMin; col < bounds.xMax; col++) // for every row, itterate through that column
+            {
+                Vector3Int position = new Vector3Int(col, row + 1, 0); // setting our position to tile above row we are one
+                TileBase above = this.tilemap.GetTile(position); //var holding position above
+
+                position = new Vector3Int(col, row, 0); // back to current row position
+                this.tilemap.SetTile(position, above); //set current position with tile above
+            }
+
+            row++;
+        }
     }
 }
